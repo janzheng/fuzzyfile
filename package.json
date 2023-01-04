@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "name": "filofax",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "R2 file handler aka 'filofax'",
+  "main": "./index.js",
+  "scripts": {
+    "batcher": "node --experimental-json-modules batcher.js",
+    "dev": "wrangler dev",
+    "preview": "wrangler preview",
+    "deploy": "wrangler publish",
+    "prod": "wrangler publish",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write '**/*.{js,css,json,md}'"
+  },
+  "author": "Jan Zheng",
+  "license": "MIT",
+  "devDependencies": {
+    "async-sema": "^3.1.1",
+    "jszip": "^3.10.1",
+    "nanoid": "^4.0.0",
+    "prettier": "^1.18.2"
+  }
+}

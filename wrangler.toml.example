@@ -1,0 +1,9 @@
+name = "filofax"
+account_id = "ENTER_YOUR_ACCOUNT_ID_HERE"
+workers_dev = true
+main = "index.js"
+compatibility_date = "2022-08-04"
+[[r2_buckets]]
+binding = "BUCKET" # <~ valid JavaScript variable name
+bucket_name = "filofax"
+preview_bucket_name = "filofax-preview"

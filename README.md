@@ -13,3 +13,9 @@ wrangler generate projectname https://github.com/cloudflare/worker-template
 ```
 
 Further documentation for Wrangler can be found [here](https://developers.cloudflare.com/workers/tooling/wrangler).
+
+
+
+## Notes
+
+Who knew `filofax` was trademarked? Project is now called `fileosophy` but variables won't be changed. Plenty of "filofax" references will remain in the code.

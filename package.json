@@ -18,10 +18,14 @@
   "author": "Jan Zheng",
   "license": "MIT",
   "devDependencies": {
+    "@aws-sdk/s3-request-presigner": "^3.400.0",
     "async-sema": "^3.1.1",
     "ipfs-only-hash": "^4.0.0",
     "jszip": "^3.10.1",
     "nanoid": "^4.0.0",
     "prettier": "^1.18.2"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.400.0"
   }
 }

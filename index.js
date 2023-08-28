@@ -4,12 +4,13 @@ import { downloadFileBuf } from './lib/helpers.js'
 import { getHandler, postHandler, deleteHandler, putHandler } from './lib/v1-handlers.js'
 
 
-
-addEventListener('fetch', (event) => {
+addEventListener('fetch', (event, env) => {
   event.respondWith(handleRequest(event.request))
 })
 
 async function handleRequest(request, env) {
+
+
   const url = new URL(request.url);
   let key = url.pathname.slice(1);
 

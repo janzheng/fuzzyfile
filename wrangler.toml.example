@@ -1,4 +1,4 @@
-name = "fuzzyface"
+name = "fuzzyfile"
 account_id = "ENTER_YOUR_ACCOUNT_ID_HERE"
 workers_dev = true
 main = "index.js"
@@ -6,13 +6,13 @@ compatibility_date = "2022-08-04"
 
 [[r2_buckets]]
 binding = "BUCKET" # <~ valid JavaScript variable name
-bucket_name = "fuzzyface" # <~ name of your bucket here
-preview_bucket_name = "fuzzyface-preview" # <~ name of your preview bucket here; good idea to not use the same as the regular bucket
+bucket_name = "fuzzyfile" # <~ name of your bucket here
+preview_bucket_name = "fuzzyfile-preview" # <~ name of your preview bucket here; good idea to not use the same as the regular bucket
 
 [vars]
 # token will match against the correct namespace
 # token pairs: [token|namespace, token_2|namespace_2]
-BUCKET_NAME = "fuzzyface-preview" # set to "fuzzyface" on dashboard var
+BUCKET_NAME = "fuzzyfile-preview" # set to "fuzzyfile" on dashboard var
 namespaces = "example_token|testing"
 ACCOUNT_ID = "YOUR_R2_ACCOUNT_ID"
 ACCESS_KEY_ID = "YOUR_R2_GENERATED_AWS_ACCESS_KEY"

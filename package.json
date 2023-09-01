@@ -1,9 +1,9 @@
 {
   "private": true,
-  "name": "fuzzyface",
+  "name": "fuzzyfile",
   "version": "1.0.0",
   "type": "module",
-  "description": "R2 file handler aka 'fuzzyface'",
+  "description": "R2 file handler aka 'fuzzyfile'",
   "main": "./index.js",
   "scripts": {
     "batcher": "node --experimental-json-modules batcher.js",

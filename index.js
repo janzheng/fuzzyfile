@@ -1,7 +1,8 @@
 
-import { handleOptions, authorizeRequest } from './lib/cors-handler.js'
-import { downloadFileBuf } from './lib/helpers.js'
-import { getHandler, postHandler, deleteHandler, putHandler } from './lib/v1-handlers.js'
+import { handleOptions, authorizeRequest } from './handlers/cors-handler.js'
+// import { postHandler, deleteHandler, putHandler } from './lib/v1-handlers.js'
+import { getHandler } from './handlers/get-handler.js'
+import { postHandler } from './handlers/post-handler.js'
 
 
 addEventListener('fetch', (event, env) => {
@@ -9,8 +10,6 @@ addEventListener('fetch', (event, env) => {
 })
 
 async function handleRequest(request, env) {
-
-
   const url = new URL(request.url);
   let key = url.pathname.slice(1);
 
@@ -24,16 +23,16 @@ async function handleRequest(request, env) {
       return handleOptions(request);
       
     case 'POST':
-      return await postHandler(request);
+      return await postHandler(request, BUCKET);
 
-    case 'PUT':
-      return await putHandler(request, key);
+    // case 'PUT':
+    //   return await putHandler(request, key);
 
     case 'GET':
       return getHandler(request, BUCKET);
 
-    case 'DELETE':
-      return await deleteHandler(request, key);
+    // case 'DELETE':
+    //   return await deleteHandler(request, key);
 
     default:
       return new Response('Method Not Allowed', {

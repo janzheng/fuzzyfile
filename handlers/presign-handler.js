@@ -73,7 +73,7 @@ export const getPresignedUrl = async (config) => {
       upkey = `${scopeAndId}${filename}`
     }
   
-    if (bucketList?.objects?.length > 0)
+    if (config.scope && bucketList?.objects?.length > 0)
       id = config.scope.split('/')[config.scope.split('/').length - 1]
   
     // if using "direct upload" mode we skip adding id and versioning

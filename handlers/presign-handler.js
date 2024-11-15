@@ -43,7 +43,7 @@ export const getPresignedUrl = async (config) => {
     let version = bucketList?.objects?.length > 0 ? `v${bucketList?.objects?.length}` : `v0`
     // let filename = config.key || nanoid(4) // generate a short fake name if none given
     let filename = config.key || (config.url?.split('/')?.[config.url?.split('/').length - 1]) // try to get file name from url
-    let customFilename = config.customFilename
+    let customFilename = config.customFilename || config.filename
     let upkey = `${scopeAndId}${version ? `${version}/` : ''}${filename}`
   
     if (customFilename) {

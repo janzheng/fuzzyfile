@@ -77,6 +77,7 @@ export const getHandler = async (request, BUCKET) => {
       }
     } else if (config && config?.cmd == 'get') {
       try {
+        console.log('[getHandler][get] config:', config)
         const fileResult = await handleGetFile(config, BUCKET, request);
         
         if (fileResult.success) {

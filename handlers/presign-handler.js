@@ -65,7 +65,7 @@ export const getPresignedUrl = async (config) => {
       version = null
     }
   
-    console.log('>>> init upkey:', upkey)
+    console.log('[getPresignedUrl] upkey:', upkey)
   
     if (config?.useVersioning == false || config?.useVersioning == 'false') {
       console.log('>>> skipping versioning')

@@ -12,6 +12,68 @@ import { handleDownloadFile } from '../lib/downloadFile.js'
 import { handleGetFileDetails } from '../lib/getFileDetails.js'
 import { handleAddData } from '../lib/addData.js'
 
+const contentTypeMap = {
+  // Text files
+  'txt': 'text/plain',
+  'html': 'text/html',
+  'htm': 'text/html',
+  'css': 'text/css',
+  'csv': 'text/csv',
+  'ics': 'text/calendar',
+  'calendar': 'text/calendar',
+  'md': 'text/markdown',
+
+  // Application files
+  'json': 'application/json',
+  'js': 'application/javascript',
+  'mjs': 'application/javascript',
+  'xml': 'application/xml',
+  'pdf': 'application/pdf',
+  'zip': 'application/zip',
+  'doc': 'application/msword',
+  'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'xls': 'application/vnd.ms-excel',
+  'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'ppt': 'application/vnd.ms-powerpoint',
+  'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+
+  // Image files
+  'png': 'image/png',
+  'jpg': 'image/jpeg',
+  'jpeg': 'image/jpeg',
+  'gif': 'image/gif',
+  'webp': 'image/webp',
+  'svg': 'image/svg+xml',
+  'ico': 'image/x-icon',
+  'bmp': 'image/bmp',
+  'tiff': 'image/tiff',
+
+  // Audio files
+  'mp3': 'audio/mpeg',
+  'wav': 'audio/wav',
+  'ogg': 'audio/ogg',
+  'm4a': 'audio/mp4',
+
+  // Video files
+  'mp4': 'video/mp4',
+  'webm': 'video/webm',
+  'avi': 'video/x-msvideo',
+  'mov': 'video/quicktime',
+  'wmv': 'video/x-ms-wmv',
+
+  // Font files
+  'ttf': 'font/ttf',
+  'otf': 'font/otf',
+  'woff': 'font/woff',
+  'woff2': 'font/woff2',
+
+  // Other common types
+  'yaml': 'application/yaml',
+  'yml': 'application/yaml',
+  'epub': 'application/epub+zip',
+  'rtf': 'application/rtf',
+};
+
 export const getHandler = async (request, BUCKET) => {
   try {
     // const { searchParams } = new URL(request.url)
@@ -80,6 +142,14 @@ export const getHandler = async (request, BUCKET) => {
         console.log('[getHandler][get] config:', config)
         const fileResult = await handleGetFile(config, BUCKET, request);
         
+        console.log('[getHandler] Raw response from handleGetFile:', {
+          success: fileResult.success,
+          status: fileResult.status,
+          metadata: fileResult.metadata,
+          bodyType: typeof fileResult.body,
+          bodyIsStream: fileResult.body instanceof ReadableStream
+        });
+        
         if (fileResult.success) {
           const headers = new Headers({
             'cache-control': fileResult.metadata.cacheControl,
@@ -104,9 +174,37 @@ export const getHandler = async (request, BUCKET) => {
 
           headers.set('etag', fileResult.metadata.etag);
 
+          // Get the file extension and determine the content type
+          const fileKey = fileResult.metadata.key;
+          const extension = fileKey.split('.').pop().toLowerCase();
+          console.log('[getHandler] File extension:', extension);
+          
+          // Use the content type from metadata if available, otherwise use our mapping
+          let contentType = fileResult.metadata.contentType;
+          
+          // If content type is missing or generic, use our mapping
+          if (!contentType || contentType === 'application/octet-stream') {
+            contentType = contentTypeMap[extension] || 'application/octet-stream';
+            console.log('[getHandler] Using mapped content type:', contentType, 'for extension:', extension);
+          }
+          
+          console.log('[getHandler][contentType] ', contentType, fileResult);
+
+          // For non-ICS files or if ICS special handling failed
+          const headersFinal = {
+            ...corsHeaders,
+            'Content-Type': contentType,
+            'ETag': fileResult.metadata.etag,
+            'Cache-Control': fileResult.metadata.cacheControl || 'no-cache',
+            'Content-Disposition': fileResult.metadata.contentDisposition || 'inline',
+          };
+
+          console.log('[getHandler] Final response headers:', headersFinal);
+
+          // Create and return the response
           return new Response(fileResult.body, {
-            headers,
-            status: fileResult.status
+            status: fileResult.status,
+            headers: headersFinal
           });
         }
       } catch (error) {

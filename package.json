@@ -25,9 +25,10 @@
     "jszip": "^3.10.1",
     "nanoid": "^4.0.0",
     "prettier": "^1.18.2",
-    "wrangler": "^3.6.0"
+    "wrangler": "^3.114.3"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.400.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }

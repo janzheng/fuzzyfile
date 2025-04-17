@@ -151,30 +151,7 @@ export const getHandler = async (request, BUCKET) => {
         });
         
         if (fileResult.success) {
-          const headers = new Headers({
-            'cache-control': fileResult.metadata.cacheControl,
-            'content-disposition': fileResult.metadata.contentDisposition,
-            'Content-Length': fileResult.metadata.size,
-            ...corsHeaders
-          });
-
-          if (fileResult.metadata.contentType) {
-            headers.set('Content-Type', fileResult.metadata.contentType);
-          }
-
-          if (fileResult.metadata.contentType?.startsWith('video/')) {
-            headers.set('Accept-Ranges', 'bytes');
-          }
-
-          if (fileResult.metadata.range) {
-            headers.set('Content-Range', 
-              `bytes ${fileResult.metadata.range.offset}-${fileResult.metadata.range.offset + fileResult.metadata.range.length - 1}/${fileResult.metadata.size}`
-            );
-          }
-
-          headers.set('etag', fileResult.metadata.etag);
-
-          // Get the file extension and determine the content type
+          // Determine the final content type first
           const fileKey = fileResult.metadata.key;
           const extension = fileKey.split('.').pop().toLowerCase();
           console.log('[getHandler] File extension:', extension);
@@ -188,23 +165,41 @@ export const getHandler = async (request, BUCKET) => {
             console.log('[getHandler] Using mapped content type:', contentType, 'for extension:', extension);
           }
           
-          console.log('[getHandler][contentType] ', contentType, fileResult);
+          console.log('[getHandler][contentType] Final determined contentType:', contentType);
 
-          // For non-ICS files or if ICS special handling failed
-          const headersFinal = {
-            ...corsHeaders,
-            'Content-Type': contentType,
+          // Now build the headers using the final contentType
+          const headers = new Headers({
+            'cache-control': fileResult.metadata.cacheControl || 'no-cache',
+            'content-disposition': fileResult.metadata.contentDisposition || 'inline',
+            'Content-Length': fileResult.metadata.size,
             'ETag': fileResult.metadata.etag,
-            'Cache-Control': fileResult.metadata.cacheControl || 'no-cache',
-            'Content-Disposition': fileResult.metadata.contentDisposition || 'inline',
-          };
+            'Content-Type': contentType, // Use the final determined contentType
+            ...corsHeaders
+          });
 
-          console.log('[getHandler] Final response headers:', headersFinal);
+          // Add Accept-Ranges for both video and audio files using the final contentType
+          if (contentType?.startsWith('video/') || contentType?.startsWith('audio/')) {
+            headers.set('Accept-Ranges', 'bytes');
+            
+            // Ensure Content-Length is set (redundant check, but safe)
+            if (fileResult.metadata.size) {
+              headers.set('Content-Length', fileResult.metadata.size);
+            }
+          }
+
+          // Handle Range requests (Content-Range header)
+          if (fileResult.metadata.range) {
+            headers.set('Content-Range', 
+              `bytes ${fileResult.metadata.range.offset}-${fileResult.metadata.range.offset + fileResult.metadata.range.length - 1}/${fileResult.metadata.size}`
+            );
+          }
+
+          console.log('[getHandler] Final response headers:', Object.fromEntries(headers.entries()));
 
           // Create and return the response
           return new Response(fileResult.body, {
             status: fileResult.status,
-            headers: headersFinal
+            headers: headers // Use the headers object built above
           });
         }
       } catch (error) {

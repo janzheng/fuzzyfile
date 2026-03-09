@@ -3,7 +3,7 @@
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, x-custom-auth-key",
 }
 
@@ -14,6 +14,19 @@ export const hasValidHeader = (request) => {
   // wrangler secret put AUTH_KEY_SECRET (specific to worker)
   return true 
   // return request.headers.get('X-Custom-Auth-Key') === AUTH_KEY_SECRET;
+};
+
+export const checkDeleteAuth = (config) => {
+  if (typeof DELETE_AUTH_KEY === 'undefined' || !DELETE_AUTH_KEY) {
+    return { ok: false, reason: 'DELETE_AUTH_KEY is not configured. Delete/move endpoints are disabled.' }
+  }
+  if (!config?.authKey) {
+    return { ok: false, reason: 'Missing authKey in request body.' }
+  }
+  if (config.authKey !== DELETE_AUTH_KEY) {
+    return { ok: false, reason: 'Invalid authKey.' }
+  }
+  return { ok: true }
 };
 
 

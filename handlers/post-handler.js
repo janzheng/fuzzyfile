@@ -1,5 +1,5 @@
 import { handleListFile } from '../lib/listFile.js'
-import { corsHeaders } from './cors-handler.js'
+import { corsHeaders, checkDeleteAuth } from './cors-handler.js'
 import { handleHashDownload } from '../lib/hashDownload.js'
 import { handleAddFile } from '../lib/addFile.js'
 import { handleGetFile } from '../lib/getFile.js'
@@ -7,6 +7,8 @@ import { handleDownloadFile } from '../lib/downloadFile.js'
 import { handleGetFileDetails } from '../lib/getFileDetails.js'
 import { getPresignedUrl } from './presign-handler.js'
 import { handleAddData } from '../lib/addData.js'
+import { handleDeleteFile, handleDeleteByPrefix } from '../lib/deleteFile.js'
+import { handleRenameFile } from '../lib/renameFile.js'
 
 export const postHandler = async (request, BUCKET) => {
   try {
@@ -124,6 +126,42 @@ export const postHandler = async (request, BUCKET) => {
             });
           }
           return new Response(JSON.stringify(dataResult), { headers: corsHeaders });
+        }
+
+        case 'delete': {
+          const deleteAuth = checkDeleteAuth(config);
+          if (!deleteAuth.ok) {
+            return new Response(
+              JSON.stringify({ error: deleteAuth.reason }),
+              { status: deleteAuth.reason.includes('not configured') ? 403 : 401, headers: corsHeaders }
+            );
+          }
+          let deleteResult;
+          if (config.prefix) {
+            deleteResult = await handleDeleteByPrefix(config, BUCKET);
+          } else {
+            deleteResult = await handleDeleteFile(config, BUCKET);
+          }
+          return new Response(JSON.stringify(deleteResult), {
+            status: deleteResult.success ? 200 : (deleteResult.status || 500),
+            headers: { 'content-type': 'application/json', ...corsHeaders }
+          });
+        }
+
+        case 'rename':
+        case 'move': {
+          const moveAuth = checkDeleteAuth(config);
+          if (!moveAuth.ok) {
+            return new Response(
+              JSON.stringify({ error: moveAuth.reason }),
+              { status: moveAuth.reason.includes('not configured') ? 403 : 401, headers: corsHeaders }
+            );
+          }
+          const renameResult = await handleRenameFile(config, BUCKET);
+          return new Response(JSON.stringify(renameResult), {
+            status: renameResult.success ? 200 : (renameResult.status || 500),
+            headers: { 'content-type': 'application/json', ...corsHeaders }
+          });
         }
 
         default:

@@ -329,7 +329,73 @@ Content-Type: application/json
 | `cmd` | string | yes | Must be `"list"` |
 | `scope` | string | no | Scope/prefix to list. Empty string lists all |
 | `nanoid` | string | no | Filter to specific nanoid |
-| `limit` | number | no | Max results (default 100) |
+| `limit` | number | no | Max results (default 100, max 1000) |
+| `cursor` | string | no | Pagination cursor from a previous response |
+| `mode` | string | no | Set to `"folders"` for folder-browsing mode |
+| `folders` | bool | no | Set to `true` for folder-browsing mode (alias) |
+
+Response (flat mode):
+```json
+{
+  "success": true,
+  "total": 50,
+  "items": [...],
+  "cursor": "eyJrZXkiOiJpbWFnZXMv...",
+  "hasMore": true
+}
+```
+
+**Paginated listing:** When `hasMore` is `true`, pass the returned `cursor` in your next request to get the next page:
+
+```json
+{
+  "cmd": "list",
+  "scope": "images",
+  "limit": 50,
+  "cursor": "eyJrZXkiOiJpbWFnZXMv..."
+}
+```
+
+#### List Files (Folder Browsing Mode)
+
+Browse the bucket like a filesystem — returns folders and files at the current level, similar to the Cloudflare R2 dashboard.
+
+```json
+POST /
+Content-Type: application/json
+
+{
+  "cmd": "list",
+  "scope": "images",
+  "mode": "folders",
+  "limit": 100
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "prefix": "images/",
+  "folders": [
+    { "prefix": "images/profiles/", "name": "profiles", "type": "folder" },
+    { "prefix": "images/banners/", "name": "banners", "type": "folder" }
+  ],
+  "files": [
+    { "key": "images/logo.png", "uploaded": "2024-01-15T10:30:00Z", "size": 20480, "type": "image/png" }
+  ],
+  "totalFolders": 2,
+  "totalFiles": 1,
+  "cursor": "...",
+  "hasMore": false
+}
+```
+
+To drill into a folder, set `scope` to the folder prefix:
+
+```json
+{ "cmd": "list", "scope": "images/profiles", "mode": "folders" }
+```
 
 #### Add JSON Data
 
@@ -425,6 +491,120 @@ Content-Type: application/json
 ```
 
 Returns the file body matching the IPFS content hash.
+
+#### Delete a File
+
+Requires `authKey` matching the `DELETE_AUTH_KEY` environment variable.
+
+**Single delete:**
+
+```json
+POST /
+Content-Type: application/json
+
+{
+  "cmd": "delete",
+  "authKey": "your-secret-key",
+  "key": "images/logo.png"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "key": "images/logo.png",
+  "message": "Deleted images/logo.png successfully"
+}
+```
+
+**Bulk delete (multiple keys):**
+
+```json
+{
+  "cmd": "delete",
+  "authKey": "your-secret-key",
+  "keys": [
+    "images/photo1.jpg",
+    "images/photo2.jpg",
+    "images/photo3.jpg"
+  ]
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "deleted": 3,
+  "notFound": 0,
+  "errors": 0,
+  "details": {
+    "deleted": ["images/photo1.jpg", "images/photo2.jpg", "images/photo3.jpg"],
+    "notFound": [],
+    "errors": []
+  },
+  "message": "Deleted 3 file(s)"
+}
+```
+
+**Delete by prefix (all files in a scope):**
+
+```json
+{
+  "cmd": "delete",
+  "authKey": "your-secret-key",
+  "prefix": "images/old-campaign"
+}
+```
+
+Deletes all objects whose key starts with the given prefix.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `cmd` | string | yes | Must be `"delete"` |
+| `authKey` | string | yes | Must match `DELETE_AUTH_KEY` env var |
+| `key` | string | no* | Single key to delete |
+| `keys` | string[] | no* | Array of keys to bulk delete |
+| `prefix` | string | no* | Delete all objects with this prefix |
+
+*One of `key`, `keys`, or `prefix` is required.
+
+#### Rename / Move a File
+
+Copies the file to a new key and deletes the original. Requires `authKey`.
+
+```json
+POST /
+Content-Type: application/json
+
+{
+  "cmd": "rename",
+  "authKey": "your-secret-key",
+  "from": "images/old-name.png",
+  "to": "images/new-name.png"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "from": "images/old-name.png",
+  "to": "images/new-name.png",
+  "message": "Renamed images/old-name.png → images/new-name.png"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `cmd` | string | yes | `"rename"` or `"move"` |
+| `authKey` | string | yes | Must match `DELETE_AUTH_KEY` env var |
+| `from` | string | yes | Current R2 key |
+| `to` | string | yes | New R2 key |
+| `overwrite` | bool | no | If `true`, overwrites if destination exists (default `false`) |
+
+If the destination key already exists and `overwrite` is not set, the request returns a `409 Conflict`.
 
 #### Get a Presigned Upload URL
 
@@ -579,7 +759,64 @@ Or via POST:
 
 ### Delete
 
-F2 does not currently expose a delete endpoint. Objects must be deleted directly via the R2 API or Cloudflare dashboard.
+```json
+{
+  "cmd": "delete",
+  "authKey": "your-secret-key",
+  "key": "images/logo.png"
+}
+```
+
+Bulk delete:
+
+```json
+{
+  "cmd": "delete",
+  "authKey": "your-secret-key",
+  "keys": ["images/old1.png", "images/old2.png"]
+}
+```
+
+Delete by prefix (all files in a folder):
+
+```json
+{
+  "cmd": "delete",
+  "authKey": "your-secret-key",
+  "prefix": "images/temp"
+}
+```
+
+### Rename / Move
+
+```json
+{
+  "cmd": "rename",
+  "authKey": "your-secret-key",
+  "from": "images/draft.png",
+  "to": "images/final.png"
+}
+```
+
+---
+
+## Authentication
+
+Destructive operations (`delete`, `rename`, `move`) require an `authKey` field in the JSON body that matches the `DELETE_AUTH_KEY` environment variable.
+
+**Setup:**
+
+1. Set `DELETE_AUTH_KEY` in `wrangler.toml` under `[vars]` for development
+2. For production, use Wrangler secrets:
+   ```bash
+   wrangler secret put DELETE_AUTH_KEY
+   ```
+3. Pass the key in every destructive request:
+   ```json
+   { "cmd": "delete", "authKey": "your-secret-key", "key": "..." }
+   ```
+
+Read-only operations (`get`, `list`, `details`, `hash`, `download`) and write operations (`add`, `data`, `presign`) do **not** require auth. F2 is designed as a public upload bucket — auth only gates destructive operations.
 
 ---
 
@@ -628,6 +865,6 @@ All responses include permissive CORS headers:
 
 ```
 Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, HEAD, POST, PUT, OPTIONS
+Access-Control-Allow-Methods: GET, HEAD, POST, PUT, DELETE, OPTIONS
 Access-Control-Allow-Headers: Content-Type, x-custom-auth-key
 ```

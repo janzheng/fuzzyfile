@@ -13,7 +13,7 @@
     "deploy": "wrangler deploy",
     "prod": "wrangler deploy",
     "commit": "git add . -A ; git commit ; git push origin main; ",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node test.mjs",
     "format": "prettier --write '**/*.{js,css,json,md}'"
   },
   "author": "Jan Zheng",
